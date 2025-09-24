@@ -1,20 +1,86 @@
 from fastapi import FastAPI
-from smart_spider.api.routes import router
-from smart_spider.core.config import settings
-from smart_spider.core.logger import setup_logging
+from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 
+from smart_spider.api.routes import router
+from smart_spider.core.database import db_manager, init_db
+from smart_spider.core.logger import logger
+
+# 创建FastAPI应用
 app = FastAPI(
     title="SmartSpider",
-    description="一个接口驱动的智能爬虫系统",
-    version="0.1.0"
+    description="一个高效的HTTP爬虫工具，通过RESTful API进行任务管理",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json"
 )
 
-# 初始化日志
-setup_logging()
+# 配置CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动事件"""
+    logger.info("SmartSpider 正在启动...")
+    try:
+        # 初始化数据库
+        await init_db()
+        logger.info("数据库初始化完成")
+    except Exception as e:
+        logger.error(f"数据库初始化失败: {str(e)}")
+        raise
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """应用关闭事件"""
+    logger.info("SmartSpider 正在关闭...")
+    try:
+        from smart_spider.engine.crawler import crawler_engine
+        await crawler_engine.cleanup()
+        logger.info("爬虫任务清理完成")
+    except Exception as e:
+        logger.error(f"清理爬虫任务失败: {str(e)}")
+
 
 # 注册路由
-app.include_router(router, prefix=settings.api_v1_prefix)
+app.include_router(router)
+
 
 @app.get("/")
-def read_root():
-    return {"message": "SmartSpider 已启动"}
+async def read_root():
+    """根路径"""
+    return {
+        "message": "SmartSpider 爬虫工具已启动",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "api": "/api/v1"
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """健康检查"""
+    return {
+        "status": "healthy",
+        "service": "SmartSpider",
+        "version": "1.0.0"
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "smart_spider.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
