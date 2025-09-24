@@ -1,0 +1,7 @@
+2025-09-24 11:25:19,862 [INFO] smart_spider.services.task_service: [TaskService] created task=665570277530276842
+2025-09-24 11:30:22,530 [WARNING] smart_spider.services.task_service: [TaskService] cancelled task=665570277530276842
+2025-09-24 11:35:56,545 [INFO] smart_spider.services.task_service: [TaskService] created task=665572947976525218
+2025-09-24 11:37:34,657 [WARNING] smart_spider.services.task_service: [TaskService] cancelled task=665572947976525218
+2025-09-24 11:41:32,682 [INFO] smart_spider.services.task_service: [TaskService] created task=665574357837287754
+2025-09-24 11:50:09,843 [INFO] smart_spider.services.task_service: [TaskService] created task=665576526967741371
+2025-09-24 11:50:15,191 [WARNING] smart_spider.services.task_service: [TaskService] cancelled task=665576526967741371

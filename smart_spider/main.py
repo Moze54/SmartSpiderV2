@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from smart_spider.api.routes import api_router
+from smart_spider.api.routes import router
 from smart_spider.core.config import settings
 from smart_spider.core.logger import setup_logging
 
@@ -13,7 +13,7 @@ app = FastAPI(
 setup_logging()
 
 # 注册路由
-app.include_router(api_router, prefix="/api")
+app.include_router(router, prefix=settings.api_v1_prefix)
 
 @app.get("/")
 def read_root():
