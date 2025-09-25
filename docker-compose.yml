@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15
+    container_name: smartspider-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-smartspider}
+      POSTGRES_USER: ${DB_USER:-smartspider}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-smartspider123}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - smartspider-network
+    restart: unless-stopped
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: smartspider-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - smartspider-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # SmartSpider主应用
+  smartspider:
+    build: .
+    container_name: smartspider-app
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      # 数据库配置
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-smartspider}
+      DB_PASSWORD: ${DB_PASSWORD:-smartspider123}
+      DB_NAME: ${DB_NAME:-smartspider}
+
+      # Redis配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+
+      # 应用配置
+      DEBUG: "false"
+      ENVIRONMENT: production
+      HOST: 0.0.0.0
+      PORT: 8000
+
+      # 其他配置
+      LOG_LEVEL: INFO
+      LOG_FILE_PATH: logs/smartspider.log
+      ENABLE_STRUCTURED_LOG: "true"
+    volumes:
+      - ./logs:/app/logs
+      - ./output:/app/output
+      - ./storage:/app/storage
+      - ./cookies:/app/cookies
+      - ./uploads:/app/uploads
+    networks:
+      - smartspider-network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # 任务调度器
+  scheduler:
+    build: .
+    container_name: smartspider-scheduler
+    environment:
+      # 与主应用相同的环境变量
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-smartspider}
+      DB_PASSWORD: ${DB_PASSWORD:-smartspider123}
+      DB_NAME: ${DB_NAME:-smartspider}
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+
+      DEBUG: "false"
+      ENVIRONMENT: production
+      SCHEDULER_ENABLED: "true"
+    volumes:
+      - ./logs:/app/logs
+      - ./storage:/app/storage
+    networks:
+      - smartspider-network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    command: ["python", "-c", "from smart_spider.scheduler.task_scheduler import task_scheduler; import asyncio; asyncio.run(task_scheduler.start())"]
+
+networks:
+  smartspider-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

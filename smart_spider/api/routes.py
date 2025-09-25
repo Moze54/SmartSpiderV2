@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Dict
 from pydantic import Field
@@ -9,8 +9,7 @@ from smart_spider.api.schemas import (
     TaskListResponse,
     TaskActionResponse,
     TaskResultResponse,
-    TaskQueryRequest,
-    ErrorResponse
+    TaskQueryRequest
 )
 from smart_spider.services.task_service import task_service
 from smart_spider.core.database import get_session
@@ -25,43 +24,6 @@ from smart_spider.core.exceptions import (
 
 # 创建API路由
 router = APIRouter(prefix="/api/v1", tags=["tasks"])
-
-# 异常处理
-@router.exception_handler(TaskNotFoundException)
-async def task_not_found_handler(request: Request, exc: TaskNotFoundException):
-    return ErrorResponse(
-        success=False,
-        error_code=404,
-        message=str(exc),
-        details=exc.details
-    )
-
-@router.exception_handler(TaskConflictException)
-async def task_conflict_handler(request: Request, exc: TaskConflictException):
-    return ErrorResponse(
-        success=False,
-        error_code=409,
-        message=str(exc),
-        details=exc.details
-    )
-
-@router.exception_handler(ValidationException)
-async def validation_error_handler(request: Request, exc: ValidationException):
-    return ErrorResponse(
-        success=False,
-        error_code=400,
-        message=str(exc),
-        details=exc.details
-    )
-
-@router.exception_handler(CrawlerException)
-async def crawler_error_handler(request: Request, exc: CrawlerException):
-    return ErrorResponse(
-        success=False,
-        error_code=500,
-        message=str(exc),
-        details=exc.details
-    )
 
 
 @router.post("/tasks", response_model=TaskResponse, summary="创建爬虫任务")
@@ -238,32 +200,3 @@ async def health_check():
 
 
 # 额外的实用接口
-
-@router.post("/tasks/quick-start", response_model=TaskResponse, summary="快速启动任务")
-async def quick_start_task(
-    url: str = Field(..., description="目标URL"),
-    parse_rules: Dict[str, str] = Field(default_factory=dict, description="解析规则"),
-    session: AsyncSession = Depends(get_session)
-):
-    """快速创建并启动爬虫任务"""
-    try:
-        # 创建简单任务
-        task_config = TaskConfig(
-            name=f"快速任务-{url}",
-            urls=[url],
-            parse_rules=parse_rules
-        )
-
-        # 创建任务
-        task = await task_service.create_task(session, task_config)
-
-        # 自动启动任务
-        await task_service.start_task(session, task.task_id)
-
-        return task
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"快速启动任务失败: {str(e)}"
-        )

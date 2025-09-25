@@ -1,343 +1,389 @@
-# SmartSpider - 智能爬虫工具
+# SmartSpider - 智能网络爬虫系统
 
-SmartSpider 是一个基于 FastAPI 的高性能异步爬虫工具，专为开发者设计，通过简单的 REST API 接口即可实现强大的网页爬取功能。
+一个功能强大的异步网络爬虫框架，提供完整的API接口和命令行工具，支持任务调度、代理管理、Cookie管理、数据导出等高级功能。
 
-## 🚀 项目特性
+## 🚀 快速开始
 
-- **异步高性能**: 基于 asyncio 和 aiohttp 实现高并发爬取
-- **RESTful API**: 提供完整的 HTTP API 接口，易于集成
-- **灵活配置**: 支持 CSS 选择器和 XPath 表达式进行数据提取
-- **任务管理**: 支持任务的创建、启动、停止、删除等全生命周期管理
-- **错误处理**: 完善的异常处理机制，提供详细的错误信息
-- **数据库支持**: 使用 MySQL 存储任务和结果数据
-- **测试覆盖**: 包含完整的单元测试和集成测试
-
-## 📋 功能清单
-
-### 核心功能
-- [x] 网页内容爬取
-- [x] 数据解析提取
-- [x] 任务生命周期管理
-- [x] 配置管理
-- [x] 错误处理与重试机制
-- [x] 结果存储与查询
-
-### API 接口
-- [x] 任务创建与管理
-- [x] 任务状态查询
-- [x] 爬取结果获取
-- [x] 健康检查
-- [x] 快速启动任务
-
-### 技术特性
-- [x] 异步非阻塞 I/O
-- [x] 并发控制
-- [x] 代理支持
-- [x] 速率限制
-- [x] 超时处理
-- [x] 日志记录
-
-## 🛠️ 技术栈
-
-- **后端框架**: FastAPI (基于 Starlette 和 Pydantic)
-- **异步 HTTP**: aiohttp
-- **数据库**: MySQL + SQLAlchemy (异步支持)
-- **HTML 解析**: BeautifulSoup4 + lxml
-- **配置管理**: Pydantic Settings
-- **测试框架**: pytest + httpx
-- **部署**: uvicorn
-
-## 📦 安装与配置
-
-### 环境要求
-
+### 1. 环境要求
 - Python 3.8+
-- MySQL 5.7+
+- Windows/Linux/MacOS
 
-### 安装步骤
-
-1. **克隆项目**
-   ```bash
-   git clone https://github.com/your-repo/smartspider.git
-   cd smartspider
-   ```
-
-2. **创建虚拟环境**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   # 或
-   venv\Scripts\activate  # Windows
-   ```
-
-3. **安装依赖**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **配置环境变量**
-   ```bash
-   cp .env.example .env
-   # 编辑 .env 文件，配置数据库连接等信息
-   ```
-
-5. **初始化数据库**
-   ```bash
-   python init_db.py
-   ```
-
-6. **启动服务**
-   ```bash
-   python run.py
-   ```
-
-## ⚙️ 配置说明
-
-### 数据库配置
-
-在 `.env` 文件中配置数据库连接：
-
-```env
-# 数据库配置
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=your_user
-DB_PASSWORD=your_password
-DB_NAME=smartspider
+### 2. 安装依赖
+```bash
+# 安装依赖
+pip install -r requirements.txt
 ```
 
-### 应用配置
+### 3. 启动系统
+```bash
+# 启动服务器
+python -m smart_spider server
 
-应用配置位于 `smart_spider/config/crawler_config.py` 中，支持以下配置项：
+# 或者指定端口和主机
+python -m smart_spider server --port 8080 --host 127.0.0.1
+```
 
-- **并发控制**: max_concurrent_requests, request_delay
-- **超时设置**: timeout, retry_times, retry_delay
-- **用户代理**: user_agent
-- **代理设置**: proxies, proxy_rotation
-- **数据提取**: selector_type (css/xpath), parse_rules
+### 4. 访问API文档
+- Swagger文档: http://localhost:8000/docs
+- ReDoc文档: http://localhost:8000/redoc
 
-## 🎯 快速开始
+## 📋 CLI命令使用指南
 
-### 1. 创建爬虫任务
+### 基础命令
+```bash
+# 查看帮助
+python -m smart_spider --help
 
+# 系统初始化（创建必要的目录）
+python -m smart_spider init
+
+# 启动服务器
+python -m smart_spider server
+
+# 运行健康检查
+python -m smart_spider health
+
+# 清理旧数据
+python -m smart_spider cleanup
+
+# 检查代理状态
+python -m smart_spider proxy-check
+
+# 验证Cookie
+python -m smart_spider cookie-check
+
+# 系统优化
+python -m smart_spider optimize
+```
+
+### 服务器参数
+```bash
+python -m smart_spider server --help
+
+# 参数说明：
+# --host: 服务器主机地址 (默认: 0.0.0.0)
+# --port: 服务器端口 (默认: 8000)
+# --reload: 开发模式自动重载
+```
+
+## 🔧 API接口使用
+
+### 1. 健康检查
+```bash
+# 检查系统状态
+curl http://localhost:8000/api/v1/health
+
+# 响应示例
+{"status":"healthy","service":"SmartSpider"}
+```
+
+### 2. 任务管理
+
+#### 创建任务
 ```bash
 curl -X POST "http://localhost:8000/api/v1/tasks" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "示例任务",
-    "description": "爬取示例网站",
-    "urls": ["https://example.com"],
-    "parse_rules": {
-      "title": "h1",
-      "links": "a"
-    },
-    "selector_type": "css"
+    "name": "测试爬虫任务",
+    "url": "https://example.com",
+    "spider_type": "general",
+    "config": {
+      "max_pages": 10,
+      "delay": 1.0,
+      "use_proxy": false
+    }
   }'
 ```
 
-### 2. 启动任务
-
+#### 获取任务列表
 ```bash
-curl -X POST "http://localhost:8000/api/v1/tasks/{task_id}/start"
+# 获取所有任务
+curl http://localhost:8000/api/v1/tasks
+
+# 分页获取
+curl "http://localhost:8000/api/v1/tasks?page=1&size=20"
+
+# 按状态筛选
+curl "http://localhost:8000/api/v1/tasks?status=running"
 ```
 
-### 3. 查询任务状态
-
+#### 获取单个任务
 ```bash
-curl "http://localhost:8000/api/v1/tasks/{task_id}/status"
+curl http://localhost:8000/api/v1/tasks/{task_id}
 ```
 
-### 4. 获取爬取结果
-
+#### 更新任务
 ```bash
-curl "http://localhost:8000/api/v1/tasks/{task_id}/results"
-```
-
-### 5. 快速启动（一步完成）
-
-```bash
-curl -X POST "http://localhost:8000/api/v1/tasks/quick-start" \
+curl -X PUT "http://localhost:8000/api/v1/tasks/{task_id}" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://example.com",
-    "parse_rules": {"title": "h1", "content": ".content"}
+    "status": "paused",
+    "config": {
+      "max_pages": 20
+    }
   }'
 ```
 
-## 📖 API 文档
-
-### 任务管理接口
-
-#### 创建任务
-```http
-POST /api/v1/tasks
-```
-
-**请求体示例：**
-```json
-{
-  "name": "任务名称",
-  "description": "任务描述",
-  "urls": ["https://example.com"],
-  "parse_rules": {
-    "title": "h1",
-    "content": ".content"
-  },
-  "max_concurrent_requests": 5,
-  "request_delay": 1.0,
-  "timeout": 30,
-  "retry_times": 3,
-  "selector_type": "css"
-}
-```
-
-#### 任务操作
-- `POST /api/v1/tasks/{task_id}/start` - 启动任务
-- `POST /api/v1/tasks/{task_id}/stop` - 停止任务
-- `DELETE /api/v1/tasks/{task_id}` - 删除任务
-- `GET /api/v1/tasks/{task_id}` - 获取任务详情
-- `GET /api/v1/tasks/{task_id}/results` - 获取爬取结果
-- `GET /api/v1/tasks/{task_id}/status` - 获取任务状态
-
-#### 任务列表
-```http
-GET /api/v1/tasks?status=PENDING&limit=10&offset=0
-```
-
-## 🧪 测试
-
-项目包含完整的测试套件：
-
-### 运行所有测试
+#### 删除任务
 ```bash
-pytest tests/ -v
+curl -X DELETE "http://localhost:8000/api/v1/tasks/{task_id}"
 ```
 
-### 运行特定测试
+#### 启动/停止任务
 ```bash
-pytest tests/test_api.py -v
-pytest tests/test_crawler_config.py -v
-pytest tests/test_downloader.py -v
-pytest tests/test_parser.py -v
+# 启动任务
+curl -X POST "http://localhost:8000/api/v1/tasks/{task_id}/start"
+
+# 停止任务
+curl -X POST "http://localhost:8000/api/v1/tasks/{task_id}/stop"
+
+# 暂停任务
+curl -X POST "http://localhost:8000/api/v1/tasks/{task_id}/pause"
+
+# 恢复任务
+curl -X POST "http://localhost:8000/api/v1/tasks/{task_id}/resume"
 ```
 
-### 生成测试报告
+### 3. 任务结果管理
+
+#### 获取任务结果
 ```bash
-pytest tests/ --cov=smart_spider --cov-report=html
+# 获取任务结果
+curl "http://localhost:8000/api/v1/tasks/{task_id}/results"
+
+# 分页获取结果
+curl "http://localhost:8000/api/v1/tasks/{task_id}/results?page=1&size=50"
 ```
 
-## 📊 项目结构
+#### 导出任务结果
+```bash
+# 导出为JSON格式
+curl "http://localhost:8000/api/v1/tasks/{task_id}/export?format=json"
 
-```
-smartspider/
-├── smart_spider/               # 主项目目录
-│   ├── api/                   # API 接口
-│   │   ├── routes.py         # 路由定义
-│   │   └── schemas.py        # 数据模型
-│   ├── config/               # 配置管理
-│   │   └── crawler_config.py
-│   ├── core/                 # 核心组件
-│   │   ├── database.py       # 数据库连接
-│   │   ├── exceptions.py     # 异常定义
-│   │   └── logger.py         # 日志配置
-│   ├── engine/               # 爬虫引擎
-│   │   ├── crawler.py        # 主爬虫引擎
-│   │   ├── downloader.py     # 下载器
-│   │   └── parser.py         # 解析器
-│   ├── models/               # 数据模型
-│   │   └── database.py       # 数据库模型
-│   ├── services/             # 业务服务
-│   │   └── task_service.py   # 任务服务
-│   └── main.py               # FastAPI 应用
-├── tests/                    # 测试目录
-│   ├── conftest.py          # 测试配置
-│   ├── test_api.py          # API 测试
-│   ├── test_crawler_config.py
-│   ├── test_downloader.py
-│   └── test_parser.py
-├── logs/                     # 日志目录
-├── output/                   # 输出目录
-├── init_db.py               # 数据库初始化脚本
-├── run.py                   # 启动脚本
-├── requirements.txt         # 依赖列表
-└── README.md               # 项目文档
+# 导出为CSV格式
+curl "http://localhost:8000/api/v1/tasks/{task_id}/export?format=csv"
+
+# 导出为Excel格式
+curl "http://localhost:8000/api/v1/tasks/{task_id}/export?format=excel"
 ```
 
-## 🔧 高级用法
+### 4. 代理管理
 
-### 自定义选择器
-
-支持 CSS 选择器和 XPath 表达式：
-
-```json
-{
-  "parse_rules": {
-    "title": "h1.title",
-    "price": ".price::text",
-    "description": "//div[@class='description']/p/text()",
-    "links": "a[href]"
-  },
-  "selector_type": "css"
-}
+#### 添加代理
+```bash
+curl -X POST "http://localhost:8000/api/v1/proxies" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "proxy_url": "http://proxy.example.com:8080",
+    "proxy_type": "http"
+  }'
 ```
 
-### 代理配置
-
-```json
-{
-  "crawler": {
-    "proxies": [
-      "http://proxy1:8080",
-      "http://proxy2:8080"
-    ],
-    "proxy_rotation": true
-  }
-}
+#### 获取代理列表
+```bash
+curl http://localhost:8000/api/v1/proxies
 ```
 
-### 速率限制
-
-```json
-{
-  "crawler": {
-    "max_concurrent_requests": 5,
-    "request_delay": 1.0,
-    "timeout": 30,
-    "retry_times": 3
-  }
-}
+#### 检查代理健康状态
+```bash
+curl -X POST "http://localhost:8000/api/v1/proxies/check"
 ```
 
-## 🐛 故障排除
+#### 删除代理
+```bash
+curl -X DELETE "http://localhost:8000/api/v1/proxies/{proxy_id}"
+```
 
-### 常见问题
+### 5. Cookie管理
 
-1. **数据库连接失败**
-   - 检查 MySQL 服务是否运行
-   - 确认数据库用户权限
-   - 验证连接参数配置
+#### 保存Cookie
+```bash
+curl -X POST "http://localhost:8000/api/v1/cookies" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "domain": "example.com",
+    "cookies": {
+      "session_id": "abc123",
+      "user_token": "xyz789"
+    }
+  }'
+```
 
-2. **爬取超时**
-   - 增加 timeout 配置值
-   - 检查网络连接
-   - 启用代理或 VPN
+#### 获取Cookie
+```bash
+# 获取指定域名的Cookie
+curl "http://localhost:8000/api/v1/cookies/example.com"
+```
 
-3. **内存不足**
-   - 减少 max_concurrent_requests
-   - 分批处理大量 URL
-   - 定期清理任务结果
+#### 清理过期Cookie
+```bash
+curl -X DELETE "http://localhost:8000/api/v1/cookies/expired"
+```
 
-### 日志查看
+### 6. 数据导出
 
-日志文件位于 `logs/` 目录：
-- `app.log` - 应用日志
-- `crawler.log` - 爬虫引擎日志
-- `error.log` - 错误日志
+#### 获取导出统计
+```bash
+curl http://localhost:8000/api/v1/export/stats
+```
 
-## 📄 许可证
+#### 导出数据
+```bash
+# 导出所有任务数据
+curl -X POST "http://localhost:8000/api/v1/export" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task_ids": ["task1", "task2"],
+    "formats": ["json", "csv"]
+  }'
+```
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+### 7. 系统管理
+
+#### 获取系统统计
+```bash
+curl http://localhost:8000/api/v1/stats
+```
+
+#### 获取系统配置
+```bash
+curl http://localhost:8000/api/v1/config
+```
+
+## 📊 配置说明
+
+### 数据库配置
+项目默认使用SQLite数据库，无需额外配置。数据库文件会自动创建在项目根目录下：`smartspider.db`
+
+如果需要使用其他数据库，请修改 `smart_spider/config/simple_config.py` 文件：
+
+```python
+# MySQL配置示例
+@property
+def url(self) -> str:
+    return "mysql+aiomysql://username:password@localhost:3306/smartspider"
+
+# PostgreSQL配置示例
+@property
+def url(self) -> str:
+    return "postgresql+asyncpg://username:password@localhost:5432/smartspider"
+```
+
+### 日志配置
+日志文件会自动保存在 `logs/` 目录下，包括：
+- `smartspider.log` - 主日志文件
+- `crawler.log` - 爬虫日志文件
+- `error.log` - 错误日志文件
+
+### 存储配置
+- **输出目录**: `output/` - 存放导出的数据文件
+- **存储目录**: `storage/` - 存放任务配置、结果和日志
+- **Cookie目录**: `cookies/` - 存放Cookie文件
+- **上传目录**: `uploads/` - 存放上传的文件
+
+## 🎯 高级功能
+
+### 1. 任务调度
+支持三种类型的定时任务：
+- **Cron任务**: 基于cron表达式的定时任务
+- **间隔任务**: 每隔固定时间执行的任务
+- **一次性任务**: 在指定时间执行一次的任务
+
+### 2. 代理管理
+- 自动检测代理可用性
+- 支持HTTP/HTTPS/SOCKS代理
+- 代理池管理和轮换
+- 代理健康状态监控
+
+### 3. Cookie管理
+- 自动保存和加载Cookie
+- Cookie过期检测和清理
+- 支持浏览器Cookie导入
+- Cookie轮换策略
+
+### 4. 数据导出
+支持多种数据导出格式：
+- JSON格式
+- CSV格式
+- Excel格式
+- 自定义格式
+
+### 5. 重试机制
+- 智能重试策略
+- 指数退避算法
+- 熔断器保护
+- 自适应重试调整
+
+## 🔍 监控和调试
+
+### 查看日志
+```bash
+# 实时查看日志
+tail -f logs/smartspider.log
+
+# 查看错误日志
+tail -f logs/error.log
+
+# 查看爬虫日志
+tail -f logs/crawler.log
+```
+
+### 性能监控
+- 系统会自动记录各项性能指标
+- 可以通过API获取系统统计信息
+- 支持Prometheus指标导出
+
+## 🚨 常见问题和解决方案
+
+### 1. 端口被占用
+```bash
+# 更换端口启动
+python -m smart_spider server --port 8080
+```
+
+### 2. 权限问题
+确保当前用户对以下目录有读写权限：
+- `logs/`
+- `output/`
+- `storage/`
+- `cookies/`
+- `uploads/`
+
+### 3. 数据库连接失败
+如果使用外部数据库，请检查：
+- 数据库服务是否启动
+- 连接参数是否正确
+- 网络连接是否正常
+
+### 4. 内存使用过高
+- 调整并发请求数量
+- 定期清理旧数据
+- 优化爬虫配置参数
+
+## 🔧 开发指南
+
+### 添加新的爬虫类型
+1. 在 `smart_spider/spiders/` 目录下创建新的爬虫类
+2. 继承基础爬虫类并实现必要的方法
+3. 在配置中注册新的爬虫类型
+
+### 自定义数据导出格式
+1. 在 `smart_spider/storage/data_exporter.py` 中添加新的导出方法
+2. 在 `export_to_format` 方法中添加对应的格式处理
+
+### 扩展API接口
+1. 在 `smart_spider/api/routes.py` 中添加新的路由
+2. 使用FastAPI的装饰器定义接口
+3. 添加相应的请求/响应模型
+
+## 📞 技术支持
+
+如果遇到问题，请：
+1. 查看日志文件获取错误信息
+2. 使用健康检查命令诊断系统状态
+3. 检查配置文件是否正确
+4. 确保所有依赖项已正确安装
 
 ---
 
-**SmartSpider** - 让数据爬取变得简单而强大！
+**注意**: 本项目为后端API服务，不提供前端界面。所有操作都通过API或CLI命令完成。

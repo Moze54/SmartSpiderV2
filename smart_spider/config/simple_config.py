@@ -12,7 +12,8 @@ class DatabaseConfig(BaseModel):
 
     @property
     def url(self) -> str:
-        return f"mysql+aiomysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        # 使用SQLite作为默认数据库，无需外部依赖
+        return "sqlite+aiosqlite:///./smartspider.db"
 
 
 class RedisConfig(BaseModel):

@@ -54,6 +54,10 @@ async def shutdown_event():
 # 注册路由
 app.include_router(router)
 
+# 注册增强版路由 (暂时注释掉，避免启动错误)
+# from smart_spider.api.enhanced_routes import enhanced_router
+# app.include_router(enhanced_router)
+
 
 @app.get("/")
 async def read_root():

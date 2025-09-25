@@ -1,17 +1,19 @@
-from typing import List, Optional
-from pydantic import Field
+from typing import List, Optional, Dict, Any
+from pydantic import Field, validator
 from pydantic_settings import BaseSettings
 import os
 
 
 class DatabaseSettings(BaseSettings):
-    """数据库配置"""
+    """数据库配置 - 增强版"""
 
     host: str = Field(default="localhost", env="DB_HOST")
     port: int = Field(default=5432, env="DB_PORT")
     user: str = Field(default="smartspider", env="DB_USER")
     password: str = Field(default="smartspider", env="DB_PASSWORD")
     name: str = Field(default="smartspider", env="DB_NAME")
+    pool_size: int = Field(default=20, env="DATABASE_POOL_SIZE")
+    max_overflow: int = Field(default=30, env="DATABASE_MAX_OVERFLOW")
 
     @property
     def url(self) -> str:
@@ -89,7 +91,7 @@ class LoggingSettings(BaseSettings):
 
 
 class CrawlerSettings(BaseSettings):
-    """爬虫配置"""
+    """爬虫配置 - 增强版"""
 
     max_concurrent_requests: int = Field(default=100, env="MAX_CONCURRENT_REQUESTS")
     download_delay: float = Field(default=1.0, env="DOWNLOAD_DELAY")
@@ -112,6 +114,20 @@ class CrawlerSettings(BaseSettings):
     proxy_enabled: bool = Field(default=False, env="PROXY_ENABLED")
     proxy_list: List[str] = Field(default_factory=list, env="PROXY_LIST")
 
+    # 高级功能配置
+    request_fingerprint_enabled: bool = Field(default=True, env="REQUEST_FINGERPRINT_ENABLED")
+    request_deduplication_enabled: bool = Field(default=True, env="REQUEST_DEDUPLICATION_ENABLED")
+    cookie_rotation_enabled: bool = Field(default=True, env="COOKIE_ROTATION_ENABLED")
+    proxy_rotation_enabled: bool = Field(default=True, env="PROXY_ROTATION_ENABLED")
+    browser_cookie_enabled: bool = Field(default=True, env="BROWSER_COOKIE_ENABLED")
+    data_validation_enabled: bool = Field(default=True, env="DATA_VALIDATION_ENABLED")
+
+    # 安全限制
+    max_url_length: int = Field(default=2048, env="MAX_URL_LENGTH")
+    max_content_length: int = Field(default=10485760, env="MAX_CONTENT_LENGTH")  # 10MB
+    max_redirects: int = Field(default=10, env="MAX_REDIRECTS")
+    max_retry_times: int = Field(default=5, env="MAX_RETRY_TIMES")
+
 
 class MonitoringSettings(BaseSettings):
     """监控配置"""
@@ -129,7 +145,7 @@ class MonitoringSettings(BaseSettings):
 
 
 class AppSettings(BaseSettings):
-    """应用配置"""
+    """应用配置 - 增强版"""
 
     # 基础配置
     name: str = "SmartSpider"
@@ -152,9 +168,82 @@ class AppSettings(BaseSettings):
     max_upload_size: int = Field(default=10 * 1024 * 1024, env="MAX_UPLOAD_SIZE")  # 10MB
     upload_dir: str = Field(default="uploads", env="UPLOAD_DIR")
 
+    # 存储配置
+    output_dir: str = Field(default="./output", env="OUTPUT_DIR")
+    storage_dir: str = Field(default="./storage", env="STORAGE_DIR")
+
+    # 安全限制
+    max_url_length: int = Field(default=2048, env="MAX_URL_LENGTH")
+    max_content_length: int = Field(default=10 * 1024 * 1024, env="MAX_CONTENT_LENGTH")  # 10MB
+
+    # 高级功能开关
+    request_fingerprint_enabled: bool = Field(default=True, env="REQUEST_FINGERPRINT_ENABLED")
+    request_deduplication_enabled: bool = Field(default=True, env="REQUEST_DEDUPLICATION_ENABLED")
+    cookie_rotation_enabled: bool = Field(default=True, env="COOKIE_ROTATION_ENABLED")
+    proxy_rotation_enabled: bool = Field(default=True, env="PROXY_ROTATION_ENABLED")
+    browser_cookie_enabled: bool = Field(default=True, env="BROWSER_COOKIE_ENABLED")
+    data_validation_enabled: bool = Field(default=True, env="DATA_VALIDATION_ENABLED")
+    scheduler_enabled: bool = Field(default=True, env="SCHEDULER_ENABLED")
+
+
+class ProxyPoolSettings(BaseSettings):
+    """代理池配置"""
+
+    test_url: str = Field(default="https://httpbin.org/ip", env="PROXY_TEST_URL")
+    check_interval: int = Field(default=300, env="PROXY_CHECK_INTERVAL")  # 5分钟
+    max_response_time: float = Field(default=10.0, env="PROXY_MAX_RESPONSE_TIME")
+    min_success_rate: float = Field(default=0.8, env="PROXY_MIN_SUCCESS_RATE")
+    max_failures: int = Field(default=5, env="PROXY_MAX_FAILURES")
+
+
+class SchedulerSettings(BaseSettings):
+    """调度器配置"""
+
+    enabled: bool = Field(default=True, env="SCHEDULER_ENABLED")
+    max_instances: int = Field(default=3, env="SCHEDULER_MAX_INSTANCES")
+    coalesce: bool = Field(default=False, env="SCHEDULER_COALESCE")
+    misfire_grace_time: int = Field(default=300, env="SCHEDULER_MISFIRE_GRACE_TIME")
+
+
+class ExportSettings(BaseSettings):
+    """数据导出配置"""
+
+    formats: List[str] = Field(default=["json", "csv", "excel"], env="EXPORT_FORMATS")
+    max_records: int = Field(default=100000, env="EXPORT_MAX_RECORDS")
+    file_size_limit: int = Field(default=104857600, env="EXPORT_FILE_SIZE_LIMIT")  # 100MB
+
+
+class CleanupSettings(BaseSettings):
+    """清理配置"""
+
+    old_files_days: int = Field(default=30, env="CLEANUP_OLD_FILES_DAYS")
+    old_cookies_days: int = Field(default=7, env="CLEANUP_OLD_COOKIES_DAYS")
+    old_proxies_days: int = Field(default=30, env="CLEANUP_OLD_PROXIES_DAYS")
+    interval_hours: int = Field(default=24, env="CLEANUP_INTERVAL_HOURS")
+
+
+class AdvancedSettings(BaseSettings):
+    """高级配置"""
+
+    # 请求指纹和去重
+    request_fingerprint_enabled: bool = Field(default=True, env="REQUEST_FINGERPRINT_ENABLED")
+    request_deduplication_enabled: bool = Field(default=True, env="REQUEST_DEDUPLICATION_ENABLED")
+    deduplication_backend: str = Field(default="memory", env="DEDUPLICATION_BACKEND")
+    deduplication_max_size: int = Field(default=100000, env="DEDUPLICATION_MAX_SIZE")
+    deduplication_ttl: Optional[int] = Field(default=3600, env="DEDUPLICATION_TTL")
+
+    # Cookie管理
+    cookie_rotation_enabled: bool = Field(default=True, env="COOKIE_ROTATION_ENABLED")
+    browser_cookie_enabled: bool = Field(default=True, env="BROWSER_COOKIE_ENABLED")
+    cookie_storage_dir: str = Field(default="./cookies", env="COOKIE_STORAGE_DIR")
+
+    # 数据验证
+    data_validation_enabled: bool = Field(default=True, env="DATA_VALIDATION_ENABLED")
+    default_validation_schema: str = Field(default="basic", env="DEFAULT_VALIDATION_SCHEMA")
+
 
 class Settings(BaseSettings):
-    """主配置类"""
+    """主配置类 - 增强版"""
 
     app: AppSettings = AppSettings()
     database: DatabaseSettings = DatabaseSettings()
@@ -165,6 +254,11 @@ class Settings(BaseSettings):
     logging: LoggingSettings = LoggingSettings()
     crawler: CrawlerSettings = CrawlerSettings()
     monitoring: MonitoringSettings = MonitoringSettings()
+    proxy_pool: ProxyPoolSettings = ProxyPoolSettings()
+    scheduler: SchedulerSettings = SchedulerSettings()
+    export: ExportSettings = ExportSettings()
+    cleanup: CleanupSettings = CleanupSettings()
+    advanced: AdvancedSettings = AdvancedSettings()
 
     class Config:
         env_file = ".env"
